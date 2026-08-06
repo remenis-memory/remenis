@@ -211,8 +211,10 @@ tempCodeRunnerFile.py
 
 # Marimo
 marimo/_static/
-marimo/_lsp/
-__marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local Remenis memory databases
+*.db
+*.sqlite
