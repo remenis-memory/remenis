@@ -1,38 +1,72 @@
-import re
-from typing import List, Dict, Any
+import os
+import json
+from google import genai
 
 class FactExtractor:
     def __init__(self):
-        # Basic key patterns to identify facts and clean filler words
-        self.filler_patterns = [
-            r"^(i think|i believe|just so you know|please note that)\s+",
-            r"\b(um|uh|like)\b"
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            raise ValueError("GEMINI_API_KEY environment variable not set.")
+        self.client = genai.Client(api_key=api_key)
+
+    def extract_facts(self, text: str) -> list[str]:
+        prompt = f"""
+        Extract concise, standalone atomic facts from the following user input.
+        Remove filler words, conversational headers (e.g., 'Um', 'Please note that'), and fluff.
+        Preserve contextual nuances (such as time, situation, or conditions).
+        Return ONLY a JSON array of strings containing the facts.
+
+        User input: "{text}"
+        """
+
+        response = self.client.models.generate_content(
+            model='gemini-3-flash-preview',
+            contents=prompt,
+        )
+
+        try:
+            cleaned_text = response.text.strip().removeprefix("```json").removesuffix("```").strip()
+            facts = json.loads(cleaned_text)
+            if isinstance(facts, list):
+                return facts
+        except Exception:
+            pass
+
+        return [text]
+
+    def resolve_conflicts(self, new_fact: str, existing_memories: list) -> list[str]:
+        if not existing_memories:
+            return []
+
+        formatted_memories = [
+            {
+                "id": str(getattr(m, "id", m.get("id") if isinstance(m, dict) else "")),
+                "content": getattr(m, "content", m.get("content") if isinstance(m, dict) else "")
+            }
+            for m in existing_memories
         ]
 
-    def extract_facts(self, raw_text: str) -> List[str]:
-        """Strips noise and splits text into structured core facts."""
-        cleaned = raw_text.strip()
-        for pattern in self.filler_patterns:
-            cleaned = re.sub(pattern, "", cleaned, flags=re.IGNORECASE)
-        
-        # Split compound sentences into distinct facts
-        sentences = [s.strip() for s in re.split(r'[.;!]', cleaned) if s.strip()]
-        return sentences if sentences else [raw_text.strip()]
+        prompt = f"""
+        Analyze if the new fact directly contradicts or updates any existing memories.
+        If the new fact updates or replaces an existing memory (e.g. changed drink preference), identify its ID.
 
-    def resolve_conflicts(self, new_fact: str, existing_memories: List[Dict[str, Any]]) -> List[int]:
+        New fact: "{new_fact}"
+        Existing memories: {json.dumps(formatted_memories)}
+
+        Return ONLY a JSON array of string IDs to delete/supersede. Example: ["5"]
         """
-        Checks if a new fact contradicts existing memories.
-        Returns a list of memory IDs that should be archived or overwritten.
-        """
-        conflicting_ids = []
-        new_words = set(new_fact.lower().split())
 
-        for mem in existing_memories:
-            existing_words = set(mem['content'].lower().split())
-            # Overlap threshold check for subject/topic collision
-            overlap = new_words.intersection(existing_words)
-            if len(overlap) >= 3 and ("not" in new_words or "prefer" in new_words or "instead" in new_words):
-                conflicting_ids.append(mem['id'])
+        response = self.client.models.generate_content(
+            model='gemini-3-flash-preview',
+            contents=prompt,
+        )
 
-        return conflicting_ids
+        try:
+            cleaned_text = response.text.strip().removeprefix("```json").removesuffix("```").strip()
+            conflicts = json.loads(cleaned_text)
+            if isinstance(conflicts, list):
+                return [str(cid) for cid in conflicts]
+        except Exception:
+            pass
 
+        return []
