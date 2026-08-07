@@ -1,18 +1,28 @@
 import sqlite3
+import sqlite_vec
 import time
 import math
-from typing import List, Dict, Any, Optional
+import struct
+from typing import List, Dict, Any
 
 class MemoryEngine:
-    def __init__(self, storage_path: str = "./remenis_memory.db", max_memory_mb: float = 10.0):
+    def __init__(self, storage_path: str = "./remenis_memory.db", vector_dim: int = 16):
         self.storage_path = storage_path
-        self.max_memory_mb = max_memory_mb
+        self.vector_dim = vector_dim
         self._init_db()
 
+    def _get_connection(self) -> sqlite3.Connection:
+        conn = sqlite3.connect(self.storage_path)
+        # Enable sqlite-vec extension
+        conn.enable_load_extension(True)
+        sqlite_vec.load(conn)
+        conn.enable_load_extension(False)
+        return conn
+
     def _init_db(self):
-        with sqlite3.connect(self.storage_path) as conn:
+        with self._get_connection() as conn:
             cursor = conn.cursor()
-            # Create main memory metadata table
+            # Table 1: Standard memory details
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS memories (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -21,72 +31,51 @@ class MemoryEngine:
                     created_at REAL NOT NULL
                 )
             """)
-            # Create FTS5 virtual table for full-text search
-            cursor.execute("""
-                CREATE VIRTUAL TABLE IF NOT EXISTS memory_fts USING fts5(
-                    content,
-                    content='memories',
-                    content_rowid='id'
+            # Table 2: Vector embeddings table (using sqlite-vec)
+            cursor.execute(f"""
+                CREATE VIRTUAL TABLE IF NOT EXISTS memory_vectors USING vec0(
+                    memory_id INTEGER PRIMARY KEY,
+                    embedding float[{self.vector_dim}]
                 )
             """)
             conn.commit()
 
+    def _text_to_vector(self, text: str) -> List[float]:
+        """
+        Converts text into a vector coordinate representation.
+        (This will be connected to a dedicated local embedding model in Step 2).
+        """
+        words = text.lower().split()
+        vector = [0.0] * self.vector_dim
+        for word in words:
+            for i, char in enumerate(word):
+                vector[i % self.vector_dim] += ord(char) % 10 / 10.0
+        
+        # Normalize vector length
+        magnitude = math.sqrt(sum(v * v for v in vector)) or 1.0
+        return [v / magnitude for v in vector]
+
+    def _serialize_vector(self, vector: List[float]) -> bytes:
+        """Packs a float list into binary format for sqlite-vec."""
+        return struct.pack(f"{len(vector)}f", *vector)
+
     def store(self, content: str, importance: float = 1.0) -> int:
         now = time.time()
-        with sqlite3.connect(self.storage_path) as conn:
+        vector = self._text_to_vector(content)
+        serialized_vec = self._serialize_vector(vector)
+
+        with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
                 "INSERT INTO memories (content, importance, created_at) VALUES (?, ?, ?)",
                 (content, importance, now)
             )
             memory_id = cursor.lastrowid
+            
             cursor.execute(
-                "INSERT INTO memory_fts(rowid, content) VALUES (?, ?)",
-                (memory_id, content)
+                "INSERT INTO memory_vectors(memory_id, embedding) VALUES (?, ?)",
+                (memory_id, serialized_vec)
             )
             conn.commit()
             return memory_id
 
-    def recall(self, query: str, limit: int = 5, decay_rate: float = 0.01) -> List[Dict[str, Any]]:
-        """
-        Recalls relevant memories using FTS5 search combined with recency decay.
-        - decay_rate: Controls how quickly memories lose score over time (in hours).
-        """
-        now = time.time()
-        with sqlite3.connect(self.storage_path) as conn:
-            cursor = conn.cursor()
-            # Query FTS5 for initial search relevance scores
-            cursor.execute("""
-                SELECT m.id, m.content, m.importance, m.created_at, bm25(memory_fts) AS raw_rank
-                FROM memory_fts f
-                JOIN memories m ON f.rowid = m.id
-                WHERE memory_fts MATCH ?
-            """, (query,))
-            
-            rows = cursor.fetchall()
-
-        results = []
-        for memory_id, content, importance, created_at, raw_rank in rows:
-            # FTS5 bm25 returns lower negative numbers for better matches, convert to a positive score
-            base_score = max(0.1, -raw_rank)
-            
-            # Calculate age in hours
-            age_hours = (now - created_at) / 3600.0
-            
-            # Apply exponential decay based on age
-            time_decay = math.exp(-decay_rate * age_hours)
-            
-            # Combine text relevance, user importance weighting, and time decay
-            final_score = round(base_score * importance * time_decay, 4)
-
-            results.append({
-                "id": memory_id,
-                "content": content,
-                "importance": importance,
-                "score": final_score,
-                "created_at": created_at
-            })
-
-        # Sort results by final decaying score in descending order
-        results.sort(key=lambda x: x["score"], reverse=True)
-        return results[:limit]
