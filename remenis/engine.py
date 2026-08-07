@@ -4,20 +4,6 @@ import time
 import math
 import struct
 from typing import List, Dict, Any
-
-class MemoryEngine:
-    def __init__(self, storage_path: str = "./remenis_memory.db", vector_dim: int = 16):
-        self.storage_path = storage_path
-        self.vector_dim = vector_dim
-        self._init_db()
-
-    def _get_connection(self) -> sqlite3.Connection:
-import sqlite3
-import sqlite_vec
-import time
-import math
-import struct
-from typing import List, Dict, Any
 from remenis.extractor import FactExtractor
 
 class MemoryEngine:
@@ -71,7 +57,6 @@ class MemoryEngine:
         inserted_ids = []
         
         for fact in facts:
-            # Check for potential conflicts against existing memories
             existing = self.recall(fact, top_k=5)
             conflicts = self.extractor.resolve_conflicts(fact, existing)
             
@@ -82,7 +67,6 @@ class MemoryEngine:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
                 
-                # Overwrite/delete conflicting old memories if found
                 if conflicts:
                     cursor.execute(f"DELETE FROM memories WHERE id IN ({','.join('?'*len(conflicts))})", conflicts)
                     cursor.execute(f"DELETE FROM memory_vectors WHERE memory_id IN ({','.join('?'*len(conflicts))})", conflicts)
