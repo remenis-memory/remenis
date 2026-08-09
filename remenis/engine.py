@@ -52,75 +52,52 @@ class MemoryEngine:
     def _serialize_vector(self, vector: List[float]) -> bytes:
         return struct.pack(f"{len(vector)}f", *vector)
 
-    def store(self, content: str, importance: float = 1.0) -> List[int]:
-        facts = self.extractor.extract_facts(content)
-        inserted_ids = []
+    def store(self, text: str, importance: float = 1.0) -> list[int]:
+        facts = self.extractor.extract_facts(text)
         
-        for fact in facts:
-            existing = self.recall(fact, top_k=5)
-            conflicts = self.extractor.resolve_conflicts(fact, existing)
-            
-            now = time.time()
-            vector = self._text_to_vector(fact)
-            serialized_vec = self._serialize_vector(vector)
+        # 1. Fetch existing memories using the helper connection
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, content FROM memories")
+            existing = [{"id": row[0], "content": row[1]} for row in cursor.fetchall()]
 
+        # 2. Batch resolve conflicts in one API call
+        conflicts_to_delete = self.extractor.resolve_conflicts_batch(facts, existing)
+        
+        # 3. Delete conflicting entries from both tables
+        if conflicts_to_delete:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                
-                if conflicts:
-                    cursor.execute(f"DELETE FROM memories WHERE id IN ({','.join('?'*len(conflicts))})", conflicts)
-                    cursor.execute(f"DELETE FROM memory_vectors WHERE memory_id IN ({','.join('?'*len(conflicts))})", conflicts)
+                for cid in conflicts_to_delete:
+                    cursor.execute("DELETE FROM memories WHERE id = ?", (cid,))
+                    cursor.execute("DELETE FROM memory_vectors WHERE memory_id = ?", (cid,))
+                conn.commit()
 
+        # 4. Insert new facts into both tables
+        stored_ids = []
+        now = time.time()
+        
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            for fact in facts:
+                # Insert memory text and metadata
                 cursor.execute(
                     "INSERT INTO memories (content, importance, created_at) VALUES (?, ?, ?)",
                     (fact, importance, now)
                 )
                 memory_id = cursor.lastrowid
+
+                # Generate vector embedding and store in sqlite-vec table
+                vector = self._text_to_vector(fact)
+                serialized_vector = self._serialize_vector(vector)
                 
                 cursor.execute(
-                    "INSERT INTO memory_vectors(memory_id, embedding) VALUES (?, ?)",
-                    (memory_id, serialized_vec)
+                    "INSERT INTO memory_vectors (memory_id, embedding) VALUES (?, ?)",
+                    (memory_id, serialized_vector)
                 )
-                conn.commit()
-                inserted_ids.append(memory_id)
-                
-        return inserted_ids
 
-    def recall(self, query: str, top_k: int = 3, decay_rate: float = 0.01) -> List[Dict[str, Any]]:
-        query_vec = self._serialize_vector(self._text_to_vector(query))
-        now = time.time()
+                stored_ids.append(memory_id)
+            conn.commit()
 
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT 
-                    m.id, 
-                    m.content, 
-                    m.importance, 
-                    m.created_at, 
-                    v.distance
-                FROM memory_vectors v
-                JOIN memories m ON m.id = v.memory_id
-                WHERE embedding MATCH ? AND k = ?
-            """, (query_vec, top_k))
-
-            results = []
-            for row in cursor.fetchall():
-                mem_id, content, importance, created_at, distance = row
-                
-                similarity = 1.0 / (1.0 + distance)
-                age_days = (now - created_at) / 86400.0
-                time_decay = math.exp(-decay_rate * age_days)
-
-                final_score = similarity * importance * time_decay
-
-                results.append({
-                    "id": mem_id,
-                    "content": content,
-                    "similarity": round(similarity, 4),
-                    "final_score": round(final_score, 4)
-                })
-
-            results.sort(key=lambda x: x["final_score"], reverse=True)
-            return results
-
+        return stored_ids
+        
