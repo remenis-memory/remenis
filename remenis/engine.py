@@ -22,23 +22,22 @@ class MemoryEngine:
 
     def _init_db(self):
         with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS memories (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     content TEXT NOT NULL,
                     importance REAL DEFAULT 1.0,
-                    created_at REAL NOT NULL
-                )
+                    created_at REAL NOT NULL,
+                    is_active INTEGER DEFAULT 1
+                );
             """)
-            cursor.execute(f"""
+            conn.execute("""
                 CREATE VIRTUAL TABLE IF NOT EXISTS memory_vectors USING vec0(
                     memory_id INTEGER PRIMARY KEY,
-                    embedding float[{self.vector_dim}]
-                )
+                    embedding float[768]
+                );
             """)
             conn.commit()
-
     def _text_to_vector(self, text: str) -> List[float]:
         words = text.lower().split()
         vector = [0.0] * self.vector_dim
@@ -69,7 +68,8 @@ class MemoryEngine:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
                 for cid in conflicts_to_delete:
-                    cursor.execute("DELETE FROM memories WHERE id = ?", (cid,))
+                    # Change DELETE to UPDATE so the memory is archived, not erased
+                    cursor.execute("UPDATE memories SET is_active = 0 WHERE id = ?", (cid,))
                     cursor.execute("DELETE FROM memory_vectors WHERE memory_id = ?", (cid,))
                 conn.commit()
 
