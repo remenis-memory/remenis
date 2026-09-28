@@ -10,7 +10,7 @@
     "(?i)import\\s+(os|sys|subprocess|shutil)",
     "(?i)eval\\(.*?\\)",
     "(?i)exec\\(.*?\\)",
-    "sk-[a-zA-Z0-9]{20,}",
+    "sk-[a-zA-Z0-9_-]{20,}",
     "AIZA[0-9A-Za-z-_]{35}",
     "(?i)(password|secret|api_key)\\s*=\\s*['\\\"][^'\\\"]+['\\\"]"
   ],
