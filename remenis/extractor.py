@@ -1,93 +1,66 @@
-import os
-import json
 import time
 from google import genai
 from google.genai.errors import APIError
 
 class FactExtractor:
-    def __init__(self):
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            raise ValueError("GEMINI_API_KEY environment variable not set.")
-        self.client = genai.Client(api_key=api_key)
+    def __init__(self, model_name="gemini-3.8-flash"):
+        self.model_name = model_name
+        self.client = genai.Client()
 
-    def _call_gemini_with_retry(self, prompt: str) -> str:
-        for attempt in range(3):
+    def _call_gemini_with_retry(self, prompt: str, max_retries: int = 5) -> str:
+        for attempt in range(max_retries):
             try:
-                time.sleep(0.5)
-                response = self.client.models.generate_content(
-                    model='gemini-3-flash-preview',
-                    contents=prompt,
-                )
+                chat = self.client.chats.create(model=self.model_name)
+                response = chat.send_message(prompt)
                 return response.text
             except APIError as e:
-                if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
-                    time.sleep(5)
+                if e.code == 503 and attempt < max_retries - 1:
+                    sleep_time = (2 ** attempt) + 1
+                    time.sleep(sleep_time)
                 else:
                     raise e
         return ""
 
     def extract_facts(self, text: str) -> list[str]:
-        prompt = f"""
-        You are an atomic fact extraction engine.
-        Convert the input text into a list of concise, standalone factual statements.
-
-        Rules:
-        1. STRIP ALL FILLER: Remove conversational fluff, intros, transitions, and qualifiers (e.g., "Honestly", "To be frank", "So listen", "You know what").
-        2. PRESERVE CONTEXT: Retain time, location, conditions, frequency, and situational constraints (e.g., "in the morning", "on rainy days", "when living in London").
-        3. ATOMICITY: Each fact must stand on its own as a single clear truth.
-
-        User input: "{text}"
-
-        Return ONLY a JSON array of strings. Example: ["User drinks coffee in the morning.", "User drinks tea at night."]
-        """
-
-        raw_text = self._call_gemini_with_retry(prompt)
-
+        prompt = f"""Extract concise, atomic factual statements from the following text as a bulleted list. Return only the facts.
+Text: "{text}"
+Facts:"""
         try:
-            cleaned_text = raw_text.strip().removeprefix("```json").removesuffix("```").strip()
-            facts = json.loads(cleaned_text)
-            if isinstance(facts, list):
-                return facts
+            raw_text = self._call_gemini_with_retry(prompt)
+            lines = [line.strip("- *").strip() for line in raw_text.split("\n") if line.strip()]
+            return [l for l in lines if l]
         except Exception:
-            pass
+            return [text]
+import time
+from google import genai
+from google.genai.errors import APIError
 
-        return [text]
+class FactExtractor:
+    def __init__(self, model_name="gemini-3.8-flash"):
+        self.model_name = model_name
+        self.client = genai.Client()
 
-    def resolve_conflicts_batch(self, new_facts: list[str], existing_memories: list) -> list[str]:
-        if not existing_memories or not new_facts:
-            return []
+    def _call_gemini_with_retry(self, prompt: str, max_retries: int = 5) -> str:
+        for attempt in range(max_retries):
+            try:
+                chat = self.client.chats.create(model=self.model_name)
+                response = chat.send_message(prompt)
+                return response.text
+            except APIError as e:
+                if e.code == 503 and attempt < max_retries - 1:
+                    sleep_time = (2 ** attempt) + 1
+                    time.sleep(sleep_time)
+                else:
+                    raise e
+        return ""
 
-        formatted_memories = [
-            {
-                "id": str(m.get("id") if isinstance(m, dict) else getattr(m, "id", "")),
-                "content": m.get("content") if isinstance(m, dict) else getattr(m, "content", "")
-            }
-            for m in existing_memories
-        ]
-
-        prompt = f"""
-        Analyze whether any NEW FACTS render any EXISTING MEMORIES obsolete or invalid.
-
-        Decision Rules:
-        1. CONTEXTUAL CO-EXISTENCE: If two habits occur under DIFFERENT conditions (e.g., morning vs night, rainy days vs sunny days, home vs work), KEEP BOTH. They are NOT in conflict.
-        2. DIRECT SUPERSEDENCE: If a new fact explicitly contradicts or replaces an existing memory without situational distinction (e.g., "User dropped Project X" vs "User works on Project X", or "User no longer drinks coffee" vs "User drinks coffee"), MARK THE OLD MEMORY FOR DELETION.
-        3. EXPLICIT CLARIFICATION: If a new fact refines or corrects a general state (e.g., "User prefers turmeric tea over coffee" replacing a generic "User prefers coffee"), MARK THE OLD MEMORY FOR DELETION.
-
-        NEW FACTS: {json.dumps(new_facts)}
-        EXISTING MEMORIES: {json.dumps(formatted_memories)}
-
-        Return ONLY a JSON array containing the string IDs of existing memories that MUST be deleted. Example: ["9"]
-        """
-
-        raw_text = self._call_gemini_with_retry(prompt)
-
+    def extract_facts(self, text: str) -> list[str]:
+        prompt = f"""Extract concise, atomic factual statements from the following text as a bulleted list. Return only the facts.
+Text: "{text}"
+Facts:"""
         try:
-            cleaned_text = raw_text.strip().removeprefix("```json").removesuffix("```").strip()
-            conflicts = json.loads(cleaned_text)
-            if isinstance(conflicts, list):
-                return [str(cid) for cid in conflicts]
+            raw_text = self._call_gemini_with_retry(prompt)
+            lines = [line.strip("- *").strip() for line in raw_text.split("\n") if line.strip()]
+            return [l for l in lines if l]
         except Exception:
-            pass
-
-        return []
+            return [text]
