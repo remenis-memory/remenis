@@ -1,35 +1,37 @@
-from fastapi import FastAPI, Request, HTTPException
+import uvicorn
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, Request
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from remenis.security.guard import RingContextGuard
+from remenis.logging_config import setup_stream_logging
 
+logger = setup_stream_logging()
 limiter = Limiter(key_func=get_remote_address)
-app = FastAPI(title="Remenis Ring Isolation Honeypot API")
+guard = RingContextGuard()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Remenis Live Stream Honeypot initialized.")
+    logger.info("Monitoring memory space at /home/remenismemory/remenis")
+    yield
+
+app = FastAPI(title="Remenis Honeypot", lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-guard = RingContextGuard()
-
 @app.post("/api/v1/challenge/prompt")
-@limiter.limit("5/10seconds")
-@limiter.limit("30/hour")
-async def submit_challenge_prompt(request: Request, payload: dict):
-    user_prompt = payload.get("prompt", "").strip()
+@limiter.limit("5/10second")
+async def process_prompt(request: Request):
+    body = await request.json()
+    raw_prompt = body.get("prompt", "")
+    logger.info(f"Incoming prompt: {raw_prompt}")
+    
+    sanitized_response = guard.sanitize_output(raw_prompt)
+    logger.info(f"Processed response: {sanitized_response}")
+    
+    return {"status": "success", "response": sanitized_response}
 
-    if not user_prompt:
-        raise HTTPException(status_code=400, detail="Prompt cannot be empty.")
-
-    if len(user_prompt) > 1000:
-        raise HTTPException(status_code=400, detail="Prompt exceeds 1000 character limit.")
-
-    isolated_env = guard.get_isolated_env()
-    agent_raw_response = f"Processed prompt safely: '{user_prompt}'"
-
-    sanitized_response = guard.sanitize_output(agent_raw_response)
-
-    return {
-        "status": "success",
-        "ring_isolation": "active",
-        "response": sanitized_response
-    }
+if __name__ == "__main__":
+    uvicorn.run(app, host="127.0.0.1", port=8000)

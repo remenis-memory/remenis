@@ -1,69 +1,85 @@
-# Remenis
+# 🛡️ Remenis Live Stream Honeypot Challenge ($0 Bounty)
 
-> Lightweight, sub-gigabyte long-term memory middleware for AI agents.
+Welcome to the **Remenis Ring-Isolation Honeypot Challenge**. This is a live, zero-dollar security benchmark running directly against the **Remenis AI Memory Framework**.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-brightgreen.svg)](https://www.python.org/)
-
-**Remenis** is a high-efficiency memory layer designed for AI agents running on constrained local hardware. It eliminates heavy cloud vector database dependencies, allowing agents to retain persistent context across sessions with sub-gigabyte memory overhead and sub-millisecond retrieval latency.
+The agent terminal is broadcasting **LIVE** via OBS on YouTube / X. Your goal is to bypass the security isolation boundaries and extract protected Ring-0 system context.
 
 ---
 
-## ⚡ Key Features
+## 🎯 Challenge Rules & Scope
 
-* **Sub-Gigabyte Footprint:** Optimized storage engines designed explicitly to operate under tight local disk/RAM limits.
-* **Low-Latency Context Retrieval:** Fast key-value and semantic index recall without sending massive payload histories to API endpoints.
-* **Zero Cloud Dependencies:** Keep agent state local, private, and deterministic.
-* **Plug-and-Play Middleware:** Hooks directly between your local LLM runner and agent execution framework.
-
----
-
-## 📊 Benchmark Comparison
-
-| Metric | Traditional Vector DB (e.g., Pinecone/Chroma) | Full Context Window Injection | **Remenis Middleware** |
-| :--- | :--- | :--- | :--- |
-| **RAM Usage** | ~1.5 GB – 4 GB+ | ~500 MB | **< 150 MB** |
-| **API Token Cost** | Low | High (Exponential growth) | **Low** |
-| **Setup Overhead** | High (External service / heavy binary) | Zero | **Minimal (Single Package)** |
-| **Execution** | Cloud / Local Heavy | Cloud API | **100% Local Edge** |
+1. **The Objective:**
+   * Break past `RingContextGuard` isolation (Ring-2 -> Ring-0).
+   * Force the agent to reveal protected memory pointers (`0x7ffd...`) or underlying API keys (`sk-`, `ghp_`).
+2. **Limits:**
+   * **Burst Rate Limit:** 5 requests per 10 seconds per IP via `/api/v1/challenge/prompt`.
+   * **In-Scope Target:** Public challenge endpoint (`/api/v1/challenge/prompt`).
+   * **Out-of-Scope:** Infrastructure-level volumetric DDoS, attacking host network interfaces, or physical server disruption.
 
 ---
 
-## 🚀 Quickstart
+## 🏗️ Architecture Overviewcat << 'EOF' > README.md
+# 🛡️ Remenis Live Stream Honeypot Challenge ($0 Bounty)
 
-### 1. Installation
+Welcome to the **Remenis Ring-Isolation Honeypot Challenge**. This is a live, zero-dollar security benchmark running directly against the **Remenis AI Memory Framework**.
+
+The agent terminal is broadcasting **LIVE** via OBS on YouTube / X. Your goal is to bypass the security isolation boundaries and extract protected Ring-0 system context.
+
+---
+
+## 🎯 Challenge Rules & Scope
+
+1. **The Objective:**
+   * Break past `RingContextGuard` isolation (Ring-2 -> Ring-0).
+   * Force the agent to reveal protected memory pointers (`0x7ffd...`) or underlying API keys (`sk-`, `ghp_`).
+2. **Limits:**
+   * **Burst Rate Limit:** 5 requests per 10 seconds per IP via `/api/v1/challenge/prompt`.
+   * **In-Scope Target:** Public challenge endpoint (`/api/v1/challenge/prompt`).
+   * **Out-of-Scope:** Infrastructure-level volumetric DDoS, attacking host network interfaces, or physical server disruption.
+
+---
+
+## 🏗️ Architecture Overview
+---
+[ Hacker / Public Prompt ]
+│
+▼
+┌─────────────────────────┐
+│ FastAPI Rate Limiter    │ (SlowAPI: 5 req / 10s)
+└───────────┬─────────────┘
+│
+▼
+┌─────────────────────────┐
+│ RingContextGuard        │ (Redacts Memory Pointers & API Tokens)
+└───────────┬─────────────┘
+│
+▼
+┌─────────────────────────┐
+│ Remenis Core Engine     │ (Ring-2 Isolated Sandbox)
+└───────────┬─────────────┘
+│
+▼
+┌─────────────────────────┐
+│ StreamSanitizingFormatter│ (Terminal Log Redaction)
+└─────────────────────────┘
+## 🏆 Security Hall of Fame
+
+Successfully bypass `RingContextGuard` or leak Ring-0 context on stream to earn a permanent spot on this leaderboard.
+
+| Rank | Researcher / Handle | Vector / Vulnerability Type | Date Verified | Stream Timestamp |
+| :---: | :--- | :--- | :---: | :---: |
+| 🥇 | *Unclaimed* | -- | -- | -- |
+| 🥈 | *Unclaimed* | -- | -- | -- |
+| 🥉 | *Unclaimed* | -- | -- | -- |
+
+*To claim a spot: Submit your payload via the live stream chat or open an issue/PR with your response payload.*
+
+---
+
+## 🚀 Running the Local Server
 
 ```bash
-pip install remenis
-```
-
-### 2. Basic Usage
-```python
-from remenis import MemoryEngine
-
-# Initialize lightweight local memory store
-memory = MemoryEngine(storage_path="./agent_memory.db", max_memory_mb=500)
-
-# Save agent interaction context
-memory.store(session_id="user_101", key="user_preference", value="Prefers unsweetened tea")
-
-# Retrieve context with low latency
-context = memory.recall(session_id="user_101", query="beverage preference")
-print(context)
-```
-
-## 🛠️ System Architecture
-```text
-+-------------------+      +----------------------+      +-------------------+
-|                   | ---> |   Remenis Engine     | ---> |   Local Storage   |
-|   AI Agent Loop   |      |  (Memory Middleware) |      | (Sub-GB Database) |
-|                   | <--- |                      | <--- |                   |
-+-------------------+      +----------------------+      +-------------------+
-```
-
----
-
-## 📄 License
-
-Distributed under the MIT License. See [LICENSE](LICENSE) for details.
-
+git clone [https://github.com/your-username/remenis.git](https://github.com/your-username/remenis.git)
+cd remenis
+source .venv/bin/activate
+PYTHONPATH=. python stream_app.py
