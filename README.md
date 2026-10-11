@@ -1,85 +1,86 @@
-# 🛡️ Remenis Live Stream Honeypot Challenge ($0 Bounty)
+# 🧠 Remenis: AI Memory Security Framework
 
-Welcome to the **Remenis Ring-Isolation Honeypot Challenge**. This is a live, zero-dollar security benchmark running directly against the **Remenis AI Memory Framework**.
+> **Clean Context. Zero Bloat. Absolute Agent Containment.**
 
-The agent terminal is broadcasting **LIVE** via OBS on YouTube / X. Your goal is to bypass the security isolation boundaries and extract protected Ring-0 system context.
+**Remenis** is an open-source AI memory isolation framework designed to solve the **AI agent memory poisoning problem**. As autonomous agents execute multi-turn tasks independently, unvetted long-term memory accumulation and context injection can cause agents to go rogue, drift, or execute unauthorized tool calls without human oversight.
 
----
-
-## 🎯 Challenge Rules & Scope
-
-1. **The Objective:**
-   * Break past `RingContextGuard` isolation (Ring-2 -> Ring-0).
-   * Force the agent to reveal protected memory pointers (`0x7ffd...`) or underlying API keys (`sk-`, `ghp_`).
-2. **Limits:**
-   * **Burst Rate Limit:** 5 requests per 10 seconds per IP via `/api/v1/challenge/prompt`.
-   * **In-Scope Target:** Public challenge endpoint (`/api/v1/challenge/prompt`).
-   * **Out-of-Scope:** Infrastructure-level volumetric DDoS, attacking host network interfaces, or physical server disruption.
+Remenis enforces strict runtime boundaries and memory hygiene to ensure agent state remains secure, fast, and untainted.
 
 ---
 
-## 🏗️ Architecture Overviewcat << 'EOF' > README.md
-# 🛡️ Remenis Live Stream Honeypot Challenge ($0 Bounty)
+## 🚀 Key Architectural Updates
 
-Welcome to the **Remenis Ring-Isolation Honeypot Challenge**. This is a live, zero-dollar security benchmark running directly against the **Remenis AI Memory Framework**.
+Remenis solves context drift and rogue agent behavior through **5 core pillars**:
 
-The agent terminal is broadcasting **LIVE** via OBS on YouTube / X. Your goal is to bypass the security isolation boundaries and extract protected Ring-0 system context.
-
----
-
-## 🎯 Challenge Rules & Scope
-
-1. **The Objective:**
-   * Break past `RingContextGuard` isolation (Ring-2 -> Ring-0).
-   * Force the agent to reveal protected memory pointers (`0x7ffd...`) or underlying API keys (`sk-`, `ghp_`).
-2. **Limits:**
-   * **Burst Rate Limit:** 5 requests per 10 seconds per IP via `/api/v1/challenge/prompt`.
-   * **In-Scope Target:** Public challenge endpoint (`/api/v1/challenge/prompt`).
-   * **Out-of-Scope:** Infrastructure-level volumetric DDoS, attacking host network interfaces, or physical server disruption.
+1. **🛡️ OS Privilege Rings (`RingContextGuard`)**
+   * Multi-tiered hierarchical memory isolation (Ring-0 to Ring-2). Guarantees untrusted prompts and user context cannot corrupt, overwrite, or leak core system memory.
+2. **🔒 Security Guardrails**
+   * Real-time validation logic that intercepts and blocks prompt injection, context poisoning, and unauthorized memory modification before state updates persist.
+3. **⏳ Time-Decay Scoring**
+   * Algorithmic decay function that automatically deprioritizes stale or obsolete memory entries so the agent retrieves only high-fidelity, relevant context.
+4. **⚡ Fast Multi-Thread Writes**
+   * High-throughput concurrent execution pipeline optimized for parallel memory reads and writes in real-time agent workflows.
+5. **🧹 Auto-Deduping**
+   * Vector and semantic deduplication engine that removes redundant memory entries, delivering **clean context with zero bloat**.
 
 ---
 
 ## 🏗️ Architecture Overview
----
-[ Hacker / Public Prompt ]
-│
-▼
-┌─────────────────────────┐
-│ FastAPI Rate Limiter    │ (SlowAPI: 5 req / 10s)
-└───────────┬─────────────┘
-│
-▼
-┌─────────────────────────┐
-│ RingContextGuard        │ (Redacts Memory Pointers & API Tokens)
-└───────────┬─────────────┘
-│
-▼
-┌─────────────────────────┐
-│ Remenis Core Engine     │ (Ring-2 Isolated Sandbox)
-└───────────┬─────────────┘
-│
-▼
-┌─────────────────────────┐
-│ StreamSanitizingFormatter│ (Terminal Log Redaction)
-└─────────────────────────┘
-## 🏆 Security Hall of Fame
 
-Successfully bypass `RingContextGuard` or leak Ring-0 context on stream to earn a permanent spot on this leaderboard.
+```text
+[ Incoming Prompt / Agent Context ]
+                 │
+                 ▼
+ ┌──────────────────────────────┐
+ │    Security Guardrails       │ (Real-Time Prompt Injection Defense)
+ └───────────────┬──────────────┘
+                 │
+                 ▼
+ ┌──────────────────────────────┐
+ │    OS Privilege Rings        │ (RingContextGuard Isolation: Ring-2 -> Ring-0)
+ └───────────────┬──────────────┘
+                 │
+                 ▼
+ ┌──────────────────────────────┐
+ │  Multi-Thread Memory Engine  │ (Auto-Deduping & Time-Decay Scoring)
+ └───────────────┬──────────────┘
+                 │
+                 ▼
+ [ Pure, Uncorrupted Context Output ]
+🛠️ Quickstart & Integration
+Install Remenis via PyPI or clone locally:
 
-| Rank | Researcher / Handle | Vector / Vulnerability Type | Date Verified | Stream Timestamp |
-| :---: | :--- | :--- | :---: | :---: |
-| 🥇 | *Unclaimed* | -- | -- | -- |
-| 🥈 | *Unclaimed* | -- | -- | -- |
-| 🥉 | *Unclaimed* | -- | -- | -- |
-
-*To claim a spot: Submit your payload via the live stream chat or open an issue/PR with your response payload.*
-
----
-
-## 🚀 Running the Local Server
-
-```bash
+Installation
+Bash
+pip install remenis
+Local Development Setup
+Bash
+# Clone repository
 git clone [https://github.com/your-username/remenis.git](https://github.com/your-username/remenis.git)
 cd remenis
+
+# Set up virtual environment
+python3 -m venv .venv
 source .venv/bin/activate
-PYTHONPATH=. python stream_app.py
+
+# Install editable package
+pip install -e .
+Usage Example
+Python
+from remenis import MemoryEngine, RingContextGuard
+
+# Initialize guard at isolation level 1
+guard = RingContextGuard(ring_level=1)
+memory = MemoryEngine(guard=guard)
+
+# Process and store secure agent memory
+clean_context = memory.process_input("User input payload")
+🤝 Community & Benchmarks
+We actively red-team Remenis against agentic vulnerabilities, memory poisoning, and context leakage patterns.
+
+Automated Red-Teaming Suites: Run pytest tests/benchmarks/ to test RingContextGuard against known prompt injection vectors.
+
+Contributing: Open an issue or pull request to submit new benchmark payloads or security guardrails.
+
+📄 License
+Distributed under the Apache 2.0 License. See LICENSE for details.
