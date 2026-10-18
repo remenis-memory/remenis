@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "remenis-secure-memory": {
+      "command": "python3",
+      "args": ["/home/remenismemory/remenis_mcp_server.py"]
+    }
+  }
+}
