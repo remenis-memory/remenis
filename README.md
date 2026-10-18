@@ -1,13 +1,13 @@
-# 🧠 Remenis
+# 🧠 Remenis — Zero-Trust Memory Engine for AI Agents
 
-A lightweight, high-performance local memory layer for AI agents. Remenis cuts token consumption by 60–70% using vector-based storage (`sqlite-vec`), while protecting your agent pipelines from prompt injection, memory drift, and context pollution.
+> Production-grade persistent memory isolated by cryptographic ledgers, capability tokens, and real-time intrusion detection.
 
-## What it solves
-AI agents love to drown in their own context windows—burning tokens, forgetting old tasks, or getting derailed by injected prompts. Remenis gives your agents a structured, self-healing memory vault backed by SQLite.
+![Remenis 3 Pillars Attack & Defense Demo](./demo_pillars.gif)
 
-## Core Features
-1. **Vector Storage & Dedup** — Slashes token usage by 60-70% using `sqlite-vec`.
-2. **Real-Time Poison Guards** — Intercepts prompt injections before they contaminate storage.
-3. **Immutable Provenance Hashing** — SHA-256 integrity binding for task intents.
-4. **Self-Healing Rollbacks** — Instant temporal snapshots to recover from corrupted agent turns.
-5. **Time-Decay Entropy** — Exponentially fades stale memories to keep active contexts lean.
+## 🛡️ The 3 Pillars of Security
+1. **🔒 Immutable HMAC-SHA256 Ledger:** Cryptographic chaining to guarantee untampered agent memory logs and roll back state on tampering.
+2. **🔑 Zero-Trust CapBAC Access Control:** Capability-based signed tokens scoping agent tool calls to strict namespaces and preventing cross-tenant leaks.
+3. **🚨 Real-Time IDS Gateway:** Behavioral circuit breakers that catch prompt-injection payloads, log telemetry anomalies, and instantly blacklist bad actors.
+
+## ⚡ Quick Start (MCP Integration)
+Plug `remenis_mcp_server.py` directly into Cursor or Claude Desktop to secure your agent memory layer instantly.
