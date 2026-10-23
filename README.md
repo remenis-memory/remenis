@@ -4,6 +4,18 @@
 </p>
 
 ---
+🚨 STATE-JACK VULNERABILITY DISCLOSURE
+Remenis is the reference implementation for neutralizing State-Jack—a persistent vector memory poisoning vulnerability class affecting autonomous agent frameworks (LangChain, CrewAI, AutoGen) paired with default vector stores.
+
+📄 Read the full security disclosure paper: STATE_JACK_WHITE_PAPER.md
+
+| Framework / Memory Combo | Susceptible to State-Jack? | State Drift Elimination | Cryptographic Storage Verification (HMAC) |
+| :--- | :--- | :--- | :--- |
+| LangChain + Chroma (Default) | 🔴 Vulnerable (Critical) | ❌ None | ❌ None |
+| CrewAI + Pinecone (Default) | 🔴 Vulnerable (Critical) | ❌ None | ❌ None |
+| AutoGen + Qdrant (Default) | 🔴 Vulnerable (High) | ❌ None | ❌ None |
+| **Remenis Middleware** | 🟢 **Protected** | 🟢 **100% (Entropy Pruned)** | 🟢 **HMAC-SHA256 Sealed** |
+
 
 ## 🛡️ Live Security & Memory Benchmarks
 
