@@ -1,5 +1,11 @@
 venv/
+build_env/
+dist/
+build/
+*.egg-info/
 __pycache__/
-*.pyc
 *.db
-.DS_Store
+.cache/
+.bash_history
+.bash_logout
+.bashrc
