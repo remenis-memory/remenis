@@ -1,0 +1,5 @@
+<<<<<<< HEAD
+sqlite-vec
+=======
+sqlite-vec>=0.1.0
+>>>>>>> 015eb83d7b2f36de80865bc3d29c39b09207bbfb

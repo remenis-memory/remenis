@@ -1,0 +1,2 @@
+[console_scripts]
+remenis = remenis.cli:main
