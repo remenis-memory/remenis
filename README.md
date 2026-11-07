@@ -1,16 +1,17 @@
-🧠 Remenis Memory
+##🧠 Remenis Memory
 
 The High-Performance, Zero-Trust AI Memory Infrastructure
 
 Stop bleeding tokens on external vector APIs. Store, compress, and secure agent states locally.
 
-⚡ See LSER in Action
+
+##⚡ See LSER in Action
 
 Witness 90%+ token reduction and ultra-fast binary serialization live in your agent loop.
 
 ![LSER Demo](demo.gif)
 
-🚀 Why Remenis?
+##🚀 Why Remenis?
 
 Autonomous multi-agent systems are bottlenecked by context bloat. Every time your agents loop, massive uncompressed strings are shipped to remote vector databases, driving up API bills and introducing privacy vulnerabilities.
 
@@ -22,14 +23,15 @@ SQLite-Vec Powered: Lightning-fast local vector similarity search without heavy 
 
 Zero-Trust Local Storage: Your agent context stays on your iron (.rmns binary format), completely encrypted and isolated.
 
-📦 Quick Start
+
+##📦 Quick Start
 
 Install the open-core engine instantly via pip:
 
 pip install remenis-memory
 
 
-Drop this into your project to initialize deterministic local memory:
+##Drop this into your project to initialize deterministic local memory:
 
 from remenis import RemenisCore
 
@@ -43,7 +45,7 @@ engine.store(
 )
 
 
-🔌 Framework Ecosystem & Native Adapters
+##🔌 Framework Ecosystem & Native Adapters
 
 Remenis features native, zero-overhead adapter patterns across leading AI orchestration frameworks out-of-the-box:
 
@@ -57,7 +59,8 @@ Remenis features native, zero-overhead adapter patterns across leading AI orches
 
 🧩 Semantic Kernel (RemenisMemoryPlugin) — Enterprise-ready plugin for Microsoft Semantic Kernel memory recall.
 
-Unified Adapter Imports
+
+##Unified Adapter Imports
 
 from remenis.adapters import (
     RemenisCrewAIMemory,
@@ -68,6 +71,6 @@ from remenis.adapters import (
 )
 
 
-🔒 Enterprise Roadmap (Coming Soon)
+##🔒 Enterprise Roadmap (Coming Soon)
 
 Note: Advanced governance modules, real-time quarantine layers, sub-5ms threat detection, and SOC2 audit ledgers are part of the upcoming Remenis Enterprise Control Plane. Build with us today in open-source.
