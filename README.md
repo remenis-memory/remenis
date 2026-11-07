@@ -65,7 +65,6 @@ from remenis.adapters import (
 )
 🔒 Enterprise Roadmap (Coming Soon)
 Note: Advanced governance modules, real-time quarantine layers, sub-5ms threat detection, and SOC2 audit ledgers are part of the upcoming Remenis Enterprise Control Plane. Build with us today in open-source.
-EOFcat << 'EOF' > README.md
 # 🧠 Remenis Memory
 
 ### The High-Performance, Zero-Trust AI Memory Infrastructure
