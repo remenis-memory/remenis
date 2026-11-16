@@ -1,0 +1,18 @@
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      storagePath:
+        type: string
+        default: "./agent_memory.rmns"
+        description: "Local file path for the hyper-dense .rmns binary memory database."
+  commandFunction:
+    |-
+    (config) => ({
+      command: 'python3',
+      args: ['remenis_mcp_server.py'],
+      env: {
+        REMENIS_STORAGE_PATH: config.storagePath || './agent_memory.rmns'
+      }
+    })
